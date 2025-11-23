@@ -351,12 +351,8 @@ To customize the deployment:
 
 ⚠️ **Important**: This setup uses default passwords for demonstration purposes. In production:
 
-1. Use strong, unique passwords
-2. Store secrets in a secrets management system (e.g., HashiCorp Vault)
-3. Enable TLS/SSL for all services
-4. Use RBAC policies
-5. Enable network policies
-6. Regularly update all components
+1. dynamic passwords from secrets management system (e.g. Vault)
+3. Enable TLS/SSL ,Use RBAC policies
 
 ## Requirements
 
@@ -366,16 +362,10 @@ To customize the deployment:
 - **Terraform**: v1.0+
 - **Docker**: v20.10+
 
-## License
+## Tshooting
 
-This project is provided as-is for educational and demonstration purposes.
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section
-2. Review component logs
-3. Verify all prerequisites are met
-4. Ensure Docker Desktop is running
+1. Ensure minikube tunneling is runnig and API server is synced with services that need ing
+2. ensure Tform annotations match version 
+4. Ensure Docker Desktop is running and k8s context matches minikube current endpoint
 
 TODOs: Dynamic Middleware for jenkins, Grafana secuirty, external storage for pgres, external storage for Tform state file, smoke test for minikub tunnel , https://github.com/Rahn-IT/traefik-gui
