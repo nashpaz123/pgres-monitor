@@ -2,10 +2,10 @@
 
 This project deploys a monitoring and CI/CD solution on Kubernetes (Minikube) with the following components:
 
-- **Traefik**: Load balancer and Ingress controller
-- **Jenkins**: CI/CD server with dynamic Kubernetes worker pods
-- **PostgreSQL**: Persistent database for Jenkins configuration and job history
-- **Grafana**: Monitoring and visualization dashboards
+- **Traefik**: Load balancer and Ingress controller, exposes traffic to Jenkins, Grafna
+- **Jenkins**: CI/CD server with dynamic Kubernetes worker pods,  populates Pgres DB
+- **PostgreSQL**: Persistent database for Jenkins "job history"
+- **Grafana**: Monitoring and visualization dashboards of Pgres DB usage 
 
 ## Architecture
 
@@ -36,30 +36,9 @@ This project deploys a monitoring and CI/CD solution on Kubernetes (Minikube) wi
 
 ## Prerequisites
 
-- macOS (tested on macOS)
-- Docker Desktop installed and running
+-(tested on macOS)
+- Docker Desktop installed and running (minikube req)
 - kubectl, Helm, Minikube, and Terraform installed
-
-### Installing Dependencies
-
-If you need to install dependencies:
-
-```bash
-# Install Homebrew (if not installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install kubectl
-brew install kubectl
-
-# Install Helm
-brew install helm
-
-# Install Minikube
-brew install minikube
-
-# Install Terraform
-brew install terraform
-```
 
 ## Quick Start
 
@@ -83,7 +62,7 @@ This script will:
 8. Create Jenkins jobs via Job DSL (runs every 5 minutes)
 9. Deploy Grafana with sub-path configuration (`/grafana`)
 10. Configure Grafana dashboards using Terraform
-11. Create IngressRoute resources for all services
+11. Create IngressRoute resources for all services (Middleware for /jenkins URL resolution)
 12. Display access credentials and URLs
 
 ### Access the Services
