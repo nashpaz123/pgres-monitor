@@ -1,6 +1,6 @@
 # PostgreSQL Monitoring with Jenkins, Grafana, and Traefik on Kubernetes
 
-This project deploys a complete monitoring and CI/CD solution on Kubernetes (Minikube) with the following components:
+This project deploys a monitoring and CI/CD solution on Kubernetes (Minikube) with the following components:
 
 - **Traefik**: Load balancer and Ingress controller
 - **Jenkins**: CI/CD server with dynamic Kubernetes worker pods
@@ -73,42 +73,46 @@ chmod +x deploy.sh
 ```
 
 This script will:
-1. Set up Minikube cluster
-2. Deploy Traefik Ingress Controller
-3. Deploy PostgreSQL with persistent storage
-4. Deploy Jenkins with Kubernetes plugin configured
-5. Configure Jenkins jobs (runs every 5 minutes)
-6. Deploy Grafana
-7. Configure Grafana dashboards using Terraform
-8. Create Ingress resources for all services
+1. Set up Minikube cluster (if not already running)
+2. Deploy Traefik Ingress Controller as LoadBalancer
+3. Start `minikube tunnel` for LoadBalancer access (requires sudo)
+4. Wait for LoadBalancer to get EXTERNAL-IP
+5. Deploy PostgreSQL with persistent storage
+6. Deploy Jenkins with Kubernetes plugin configured
+7. Configure Jenkins root URL for path-based access (`/jenkins`)
+8. Create Jenkins jobs via Job DSL (runs every 5 minutes)
+9. Deploy Grafana with sub-path configuration (`/grafana`)
+10. Configure Grafana dashboards using Terraform
+11. Create IngressRoute resources for all services
+12. Display access credentials and URLs
 
 ### Access the Services
 
-After deployment, you can access the services:
-
-**Get Minikube IP:**
-```bash
-minikube ip
-```
+After deployment, you can access the services via `minikube tunnel` (automatically started by the deploy script):
 
 **Access URLs:**
-- **Jenkins**: `http://jenkins.local` (or `http://<minikube-ip>`)
-- **Grafana**: `http://grafana.local` (or `http://<minikube-ip>`)
-- **Traefik Dashboard**: `http://traefik.local` (or `http://<minikube-ip>`)
+- **Jenkins**: `http://127.0.0.1/jenkins`
+- **Grafana**: `http://127.0.0.1/grafana`
 
-**To add local hostnames (optional):**
-Add to `/etc/hosts`:
+**Note**: The deploy script automatically starts `minikube tunnel` in the background (requires sudo) to expose LoadBalancer services. If you need to restart it manually:
+
 ```bash
-MINIKUBE_IP=$(minikube ip)
-echo "$MINIKUBE_IP jenkins.local" | sudo tee -a /etc/hosts
-echo "$MINIKUBE_IP grafana.local" | sudo tee -a /etc/hosts
-echo "$MINIKUBE_IP traefik.local" | sudo tee -a /etc/hosts
+sudo minikube tunnel
 ```
 
 **Credentials:**
-- Jenkins admin password: Saved to `.jenkins-password` file
-- Grafana admin password: Saved to `.grafana-password` file
-- Default username for both: `admin`
+The deploy script will display credentials after installation. You can also check them with:
+```bash
+./deploy.sh status
+```
+
+Default credentials:
+- **Jenkins**: 
+  - Username: `admin`
+  - Password: Saved in `.jenkins-password` file or displayed by the script
+- **Grafana**: 
+  - Username: `admin`
+  - Password: Saved in `.grafana-password` file or displayed by the script
 
 ### Check Status
 
@@ -139,10 +143,10 @@ pgres-monitor/
 ├── jenkins/                 # Jenkins configuration
 │   └── job-dsl.groovy       # Job DSL script
 ├── k8s/                     # Kubernetes manifests
-│   └── ingress.yaml         # Ingress configuration
+│   ├── ingress.yaml         # Standard Ingress configuration
+│   └── ingressroute.yaml    # Traefik IngressRoute configuration
 └── terraform/               # Terraform configuration
-    ├── main.tf              # Grafana dashboard configuration
-    └── versions.tf          # Terraform version requirements
+    └── main.tf              # Grafana dashboard configuration
 ```
 
 ## Components Details
@@ -151,10 +155,11 @@ pgres-monitor/
 
 - **Purpose**: Ingress controller and load balancer
 - **Namespace**: `kube-system`
-- **Ports**: 
-  - HTTP: 30080 (NodePort)
-  - Dashboard: 9000
+- **Service Type**: LoadBalancer (exposed via `minikube tunnel`)
+- **Entry Points**: 
+  - HTTP: Port 80 (via minikube tunnel)
 - **Configuration**: `helm/traefik-values.yaml`
+- **Routing**: Uses Traefik IngressRoute CRD for path-based routing (`/jenkins`, `/grafana`)
 
 ### PostgreSQL
 
@@ -275,8 +280,16 @@ kubectl exec -n monitoring $JENKINS_POD -- jenkins-cli -s http://localhost:8080 
 ### Check Ingress
 
 ```bash
+# Check Traefik IngressRoutes
+kubectl get ingressroute -n monitoring
+kubectl describe ingressroute -n monitoring
+
+# Check standard Ingress (if used)
 kubectl get ingress -n monitoring
 kubectl describe ingress -n monitoring
+
+# Check Traefik service and LoadBalancer status
+kubectl get svc -n kube-system traefik
 ```
 
 ### Minikube Issues
@@ -291,9 +304,26 @@ minikube start --memory=4096 --cpus=4 --disk-size=20g
 # Check status
 minikube status
 
-# Enable addons
-minikube addons enable ingress
+# Enable addons (ingress addon should be DISABLED for Traefik)
 minikube addons enable metrics-server
+minikube addons disable ingress  # Traefik replaces the default ingress
+```
+
+### LoadBalancer / minikube tunnel Issues
+
+If services are not accessible:
+
+```bash
+# Check if tunnel is running
+sudo pgrep -af "minikube tunnel"
+
+# Restart tunnel manually
+sudo pkill -f "minikube tunnel"
+sudo minikube tunnel
+
+# Check LoadBalancer status
+kubectl get svc -n kube-system traefik
+# Should show EXTERNAL-IP (not <pending>)
 ```
 
 ### Jenkins Job Not Running
@@ -335,7 +365,7 @@ To customize the deployment:
 2. **Jenkins**: Edit `helm/jenkins-values.yaml`
 3. **Grafana**: Edit `helm/grafana-values.yaml`
 4. **Traefik**: Edit `helm/traefik-values.yaml`
-5. **Ingress**: Edit `k8s/ingress.yaml`
+5. **Ingress Routing**: Edit `k8s/ingressroute.yaml` (Traefik IngressRoute) or `k8s/ingress.yaml` (standard Ingress)
 6. **Grafana Dashboards**: Edit `terraform/main.tf`
 
 ## Security Notes
@@ -369,4 +399,4 @@ For issues or questions:
 3. Verify all prerequisites are met
 4. Ensure Docker Desktop is running
 
-TODOs: true persistant storage, storage for Tform state file, 
+TODOs: Dynamic Middleware for jenkins, Grafana secuirty, external storage for pgres, external storage for Tform state file, smoke test for minikub tunnel , https://github.com/Rahn-IT/traefik-gui
