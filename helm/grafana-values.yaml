@@ -1,0 +1,48 @@
+# Grafana Configuration
+adminUser: admin
+adminPassword: admin123
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: "standard"
+  accessModes:
+    - ReadWriteOnce
+
+initChownData:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+grafana.ini:
+  server:
+    root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+    serve_from_sub_path: true
+  paths:
+    data: /var/lib/grafana/
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    reporting_enabled: false
+  log:
+    mode: console
+    level: info
+

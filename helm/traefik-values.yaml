@@ -1,0 +1,54 @@
+# Traefik Ingress Controller Configuration
+service:
+  type: LoadBalancer
+  # Note: LoadBalancer in minikube uses minikube tunnel
+  # Access via http://127.0.0.1/jenkins and http://127.0.0.1/grafana
+
+ingressRoute:
+  dashboard:
+    enabled: true
+
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 8443
+    exposedPort: 443
+    protocol: TCP
+  traefik:
+    port: 9000
+    exposedPort: 9000
+    protocol: TCP
+
+providers:
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: true
+    allowEmptyServices: true
+  kubernetesCRD:
+    enabled: true
+    allowExternalNameServices: true
+    allowEmptyServices: true
+
+logLevel: INFO
+
+accessLog:
+  enabled: true
+
+metrics:
+  prometheus:
+    enabled: true
+
+deployment:
+  replicas: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+

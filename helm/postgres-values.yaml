@@ -1,0 +1,50 @@
+# PostgreSQL Configuration
+auth:
+  enablePostgresUser: true
+  postgresPassword: "postgres123"
+  username: "postgres"
+  database: "jenkins"
+
+primary:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard"
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+service:
+  type: ClusterIP
+  ports:
+    postgresql: 5432
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+
+volumePermissions:
+  enabled: true
+

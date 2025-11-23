@@ -1,0 +1,47 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jenkins-route
+  namespace: monitoring
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/jenkins`)
+      kind: Rule
+      services:
+        - name: jenkins
+          port: 8080
+      middlewares:
+        - name: strip-jenkins-prefix
+    - match: PathPrefix(`/static`) || PathPrefix(`/adjuncts`) || PathPrefix(`/userContent`) || PathPrefix(`/cli`) || PathPrefix(`/jnlpJars`) || PathPrefix(`/scripts`) || PathPrefix(`/plugin`) || PathPrefix(`/favicon`)
+      kind: Rule
+      services:
+        - name: jenkins
+          port: 8080
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-jenkins-prefix
+  namespace: monitoring
+spec:
+  stripPrefix:
+    prefixes:
+      - /jenkins
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-route
+  namespace: monitoring
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/grafana`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 80
+      # Grafana handles /grafana prefix itself via serve_from_sub_path
